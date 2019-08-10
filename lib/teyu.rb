@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "teyu/version"
 
 module Teyu
@@ -57,7 +59,7 @@ module Teyu
   end
 
   class ArgsSorter
-    REQUIRED_SYMBOL = '!'.freeze
+    REQUIRED_SYMBOL = '!'
 
     def initialize(names)
       @names = names
@@ -78,14 +80,20 @@ module Teyu
     # method(a!:, b!:) => [:a, :b]
     # @return [Array<Symbol>] keyreq arg names
     def keyreq_args
-      @keyreq_args ||= @names.map(&:to_s).filter { |arg| arg.end_with?(REQUIRED_SYMBOL) }
-                         .map { |arg| arg.delete_suffix(REQUIRED_SYMBOL).to_sym }
+      @keyreq_args ||= @names.map do |arg|
+        string_arg = arg.to_s
+        next unless string_arg.end_with?(REQUIRED_SYMBOL)
+        string_arg.delete_suffix(REQUIRED_SYMBOL).to_sym
+      end.compact
     end
 
     # method(a: 'a', b: 'b') => { a: 'a', b: 'b' }
     # @return [Hash] keyword args with default value
     def key_args
-      @key_args ||= @names.filter { |arg| arg.is_a?(Hash) }&.inject(:merge) || {}
+      return @key_args if @key_args
+
+      args = @names.filter { |arg| arg.is_a?(Hash) }
+      @key_args = {}.merge(*args)
     end
   end
 end
